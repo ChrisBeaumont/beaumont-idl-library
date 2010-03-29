@@ -39,12 +39,24 @@
 ;
 ; MODIFICATION HISTORY:
 ;  June 2009: Written by Chris Beaumont
+;  March 2010: Added input checking. cnb.
 ;-
 pro extast3, hdr, result, delete = delete
   compile_opt idl2
-  result = {extast3}
+  on_error, 2
 
+  ;- check inputs
+  if n_params() eq 0 then begin
+     print, 'calling sequence'
+     print, 'extast3, hdr, result, [/delete]'
+     return
+  endif
+
+  if n_elements(hdr) eq 0 || size(hdr,/tname) ne 'STRING' $
+     then message, 'hdr must be a string array'
+  
   if keyword_set(delete) then begin
+     if n_elements(delete) eq 0 then return
      names = tag_names(result)
      hit = where(names eq 'EXTAST', ct)
      if ct eq 1 then ptr_free, result.extast
@@ -53,6 +65,8 @@ pro extast3, hdr, result, delete = delete
      return
   endif
   
+  result = {extast3}
+
   naxis = sxpar(hdr, 'naxis', count = ct)
   if ct ne 1 then $
      message, 'cannot find naxis keyword in supplied header'

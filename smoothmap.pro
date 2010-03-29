@@ -1,4 +1,8 @@
 ;+
+; WARNING:
+;  This function has been deprecated, and replaced by SKYMAP_SMOOTH. I
+;  recommend using that function instead of this one.
+;
 ; NAME:
 ;  SMOOTHMAP
 ;
@@ -65,6 +69,7 @@
 ;  December 4 2008: Fixed things so NANs in the input val variable 
 ;                   are ignored. cnb.
 ;  April 15 2009: Added CARTESIAN keyword   
+;  March 2010: Deprecated and replaced by skymap_smooth. cnb.
 ;-
 PRO smoothmap, val, err, x, y, map, errmap, ctmap, head, cdelt = cdelt, $
                fwhm = fwhm, out = out, clip = clip, galactic = galactic, $
