@@ -1,0 +1,153 @@
+;+
+; PURPOSE:
+;  Projects a given vector onto the vector space defined by the
+;  principal compents, and returns the result
+;
+; INPUTS:
+;  data: A vector to project
+;
+; KEYWORD PARAMETERS:
+;  nterm: Set to an integer to project onto only the first nterm
+;         principal components.
+;  coeff: Set to a variable to hold the coefficients of the linear
+;         combination of principal components. In other words, result
+;         = sum( coeff[i] * PC_i )
+;
+; OUTPUTS:
+;  The projection of the input onto the principal components. This is
+;  equivalent to sum(coeff[i] * PC_i) where coeff[i] = sum(data *
+;  PC_i)
+;-  
+function pricom::project, data, nterm = nterm
+  if ~keyword_set(nterm) then nterm = self.nevec else $
+     nterm = nterm < self.nevec
+  
+  sz = size(data)
+  if sz[1] ne self.ndim then message, 'input data not the correct dimension'
+  mean = rebin(*self.mean, sz[1], sz[2])
+  norm = data - mean
+  
+  ;- dot the data into each eigenvector. Get coeffs
+  coeffs = *self.evec ## transpose(norm) ;- N data cols by M evec rows
+  
+  if nterm lt self.nevec then coeffs[*, nterm:*] = 0
+  result = norm * 0
+  for i = 0, sz[2] - 1 do $
+     result[*, i] = total(rebin(coeffs[i,*], self.ndim, self.nevec) * *self.evec, 2)
+  
+  return, result + mean
+end
+
+;+
+; PURPOSE:
+;  Return the principal components.
+;
+; INPUTS:
+;  none
+;
+; OUTPUTS:
+;  the principal components
+;-
+function pricom::get_pc
+  return, *self.evec
+end
+
+;+
+; PURPOSE:
+;  Get the vector of variances associated with each principal
+;  component. In other words, var[i] is the fraction of the total
+;  variance in the training data, when projected onto PC_i
+;
+; INPUTS:
+;  none
+;
+; OUTPUTS:
+;  The variance array
+;-
+function pricom::get_variance
+  return, *self.var
+end
+
+;+
+; PURPOSE:
+;  Get the mean of the training data
+;-
+function pricomm::get_mean
+  return, *self.mean
+end
+
+;+
+; PURPOSE:
+;  Build a new PCA object.
+; 
+; INPUTS:
+;  data: an (ndim) by (nobj) array of training data. Contains (nobj)
+;  vectors, each with (ndim) elements. These are the data used to
+;  generate the principal components
+;-
+function pricom::init, data
+
+  sz = size(data)
+  nobj = sz[2]
+  ndim = sz[1]
+  mean = total(data, 2) / nobj
+  norm_data = data - rebin(mean, ndim, nobj)
+
+  result = PCOMP(norm_data, coeff = coeff, $
+                 eigenval = eval, var = var)
+
+  ;- ok, the result has some instabilities when ndata < ndim
+  ;- we know there are only min(ndata, ndim) distinct evecs
+  ;- so truncate the output
+  outsz = min(ndim, nobj)
+  nevec = outsz
+  ;- get the eigenvectors and normalize them
+  evec = coeff / rebin(eval, ndim, ndim)
+  evec /= sqrt(rebin(1#total(evec^2, 1), ndim, ndim))
+  bad = where(~finite(evec), badct)
+  if badct ne 0 then evec[bad] = 0
+
+  evec = evec[*,0:outsz-1]
+  eval = eval[0:outsz-1]
+  var = var[0:outsz-1]
+  ;- populate the object
+  self.ndim = ndim
+  self.nobj = nobj
+  self.nevec = nevec
+  self.data = ptr_new(norm_data)
+  self.eval = ptr_new(eval)
+  self.evec = ptr_new(evec)
+  self.mean = ptr_new(mean)
+  self.var = ptr_new(var)
+
+  return, 1
+end
+
+;+
+; PURPOSE:
+;  Free all the pointers associated with the object, upon deletion
+;-
+pro pricom::cleanup
+  ptr_free, self.eval
+  ptr_free, self.evec
+  ptr_free, self.data
+  ptr_free, self.var
+  ptr_free, self.mean
+end
+
+;+
+; PURPOSE:
+;  This class provides a more convenient interface for working with
+;  principal component analysis. The user supplies a training data
+;  set, which is used to generate principal components via the IDL
+;  procedure PCOMP. The methods in this class then allow a simple way
+;  to project new vectors onto PCA space, obtain the principal
+;  components, etc.
+;
+; MODIFICATION HISTORY:
+;  April 2010: Written by Chris Beaumont
+;-
+pro pricom__define
+  data = {pricom, nobj : 0, ndim: 0, nevec: 0, data : ptr_new(), $
+          eval : ptr_new(), evec : ptr_new(), var: ptr_new(), mean : ptr_new()}
+end
