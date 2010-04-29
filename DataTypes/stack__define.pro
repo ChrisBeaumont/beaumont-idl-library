@@ -18,6 +18,8 @@ compile_opt idl2
 ;  isEmpty() : Return a 1 if the stack is empty
 ;  toArray() : Return the contents of the stack as an array
 ;  getSize() : Return the number of elements in the array
+;  contains(num): Return 1 if num is already in the stack somewhere,
+;                 else return 0
 ;
 ; INTERNAL METHODS:
 ;  ensureCapacity(num) : Increase the size of array as necessary to 
@@ -27,6 +29,7 @@ compile_opt idl2
 ; MODIFICATION HISTORY:
 ;  January 2009: Written by Chris Beaumont
 ;  Oct 2009: Added /NOCOPY keyword to toArray(). cnb.
+;  April 2010: Added contains() method. cnb
 ;-
 
 ;+
@@ -108,6 +111,15 @@ end
 function stack::peek, num
   if n_elements(num) eq 0 then num = 1
   return, self->fetch(num)
+end
+
+;+ 
+; PURPOSE:
+;  Determine whether num exists in the stack already
+;-
+function stack::contains, num
+  hit = where(*(self.data) eq num, ct)
+  return, ct ne 0
 end
 
 

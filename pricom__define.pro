@@ -9,7 +9,7 @@
 ; KEYWORD PARAMETERS:
 ;  nterm: Set to an integer to project onto only the first nterm
 ;         principal components.
-;  coeff: Set to a variable to hold the coefficients of the linear
+;  coeffs: Set to a variable to hold the coefficients of the linear
 ;         combination of principal components. In other words, result
 ;         = sum( coeff[i] * PC_i )
 ;
@@ -17,8 +17,14 @@
 ;  The projection of the input onto the principal components. This is
 ;  equivalent to sum(coeff[i] * PC_i) where coeff[i] = sum(data *
 ;  PC_i)
+;
+; MODIFICATION HISTORY:
+;  March 2010: Written by Chris Beaumont
+;  April 2010: Fixed a bug that crashed this function when called with
+;              only one data point. cnb
+;  April 2010: Number of returned coeffs matches nterm.  
 ;-  
-function pricom::project, data, nterm = nterm
+function pricom::project, data, nterm = nterm, coeffs = coeffs
   if ~keyword_set(nterm) then nterm = self.nevec else $
      nterm = nterm < self.nevec
   
@@ -32,9 +38,10 @@ function pricom::project, data, nterm = nterm
   
   if nterm lt self.nevec then coeffs[*, nterm:*] = 0
   result = norm * 0
-  for i = 0, sz[2] - 1 do $
+  nobj = n_elements(data) / sz[1]
+  for i = 0, nobj - 1 do $
      result[*, i] = total(rebin(coeffs[i,*], self.ndim, self.nevec) * *self.evec, 2)
-  
+  coeffs = coeffs[*, 0:nterm-1]
   return, result + mean
 end
 

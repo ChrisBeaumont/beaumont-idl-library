@@ -65,6 +65,8 @@
 ;  June 2009: Written by Chris Beaumont
 ;  December 2009: Messages are indented proportional to the
 ;                 calling function's depth in the stack.
+;  April 2010: Fixed a bug that crashed verbiage if help, /trace
+;              overflows onto multiple lines
 ;-
 pro verbiage, msg, msg_lvl, report_lvl
   compile_opt idl2
@@ -76,6 +78,8 @@ pro verbiage, msg, msg_lvl, report_lvl
   if ~n_elements(msg) || msg eq '' then return
   ;- get the name of the procedure which called this one
   help, /trace, out = stack
+  good = where(strmatch(stack, '%*'))
+  stack = stack[good]
   depth = n_elements(stack)
   prog = stack[1]
   split = strsplit(prog, ' ', /extract)

@@ -13,11 +13,10 @@
 ;
 ; MODIFICATION HISTORY:
 ;  June 2009: Written by Chris Beaumont
+;  April 2010: Vectorized. cnb.
 ;-
 function sign, x
   compile_opt idl2
   on_error, 2
-  if x gt 0 then return, 1
-  if x lt 0 then return, -1
-  return, 0
+  return, 0 + (x gt 0) - (x lt 0)
 end

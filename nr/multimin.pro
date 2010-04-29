@@ -40,6 +40,7 @@
 ;
 ; MODIFICATION HISTORY:
 ;  June 2009: Written by Chris Beaumont.
+;  April 2010: Tweaked parameter checking. cnb.
 ;- 
 function multimin, func, point, $
                    fmin = fmin, $
@@ -52,6 +53,7 @@ function multimin, func, point, $
      print, 'multimin calling sequence:'
      print, 'result = multimin(func, point, [fmin = fmin,'
      print, '                  tol = tol, /verbose, _extra = extra'
+     print, '         func: result = func(x, _extra = extra)'
      return, !values.f_nan
   endif
 
