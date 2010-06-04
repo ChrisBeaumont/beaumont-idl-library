@@ -22,6 +22,7 @@
 ;
 ; MODIFICATION HISTORY:
 ;  March 2010: Written by Chris Beaumont
+;  May 2010: Fixed a bug in the call to xy2ad. cnb.
 ;-  
 pro xyzadv, head, x, y, z, a, d, v
 
@@ -40,7 +41,7 @@ pro xyzadv, head, x, y, z, a, d, v
      message, 'x, y, z must have the same number of elements'
 
   extast3, head, struct
-  xy2ad, x, y, struct.extast, a, d
+  xy2ad, x, y, *struct.extast, a, d
 
   v = struct.crval3 + (z + 1 - struct.crpix3) * struct.cdelt3
   extast3, head, struct, /delete

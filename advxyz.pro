@@ -24,6 +24,7 @@
 ;
 ; MODIFICATION HISTORY:
 ;  March 2010: Written by Chris Beaumont
+;  May 2010: Fixed a bug in call to ad2xy. cnb.
 ;-
 pro advxyz, head, a, d, v, x, y, z
   compile_opt idl2
@@ -46,7 +47,7 @@ pro advxyz, head, a, d, v, x, y, z
 
   ;- do the work
   extast3, head, struct
-  ad2xy, a, d, struct.extast, x, y
+  ad2xy, a, d, *struct.extast, x, y
 
   z = struct.crpix3 + (v - struct.crval3) / struct.cdelt3 - 1
   extast3, head, struct, /delete
