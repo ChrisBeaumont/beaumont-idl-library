@@ -59,20 +59,8 @@ function pricom::get_pc
   return, *self.evec
 end
 
-;+
-; PURPOSE:
-;  Get the vector of variances associated with each principal
-;  component. In other words, var[i] is the fraction of the total
-;  variance in the training data, when projected onto PC_i
-;
-; INPUTS:
-;  none
-;
-; OUTPUTS:
-;  The variance array
-;-
-function pricom::get_variance
-  return, *self.var
+function pricom::get_eval
+  return, *self.eval
 end
 
 ;+
@@ -97,26 +85,11 @@ function pricom::init, data
   sz = size(data)
   nobj = sz[2]
   ndim = sz[1]
-  mean = total(data, 2) / nobj
+  cnb_pca, data, eval, evec, mean = mean
+
+  nevec = n_elements(evec[0,*])
   norm_data = data - rebin(mean, ndim, nobj)
 
-  result = PCOMP(norm_data, coeff = coeff, $
-                 eigenval = eval, var = var)
-
-  ;- ok, the result has some instabilities when ndata < ndim
-  ;- we know there are only min(ndata, ndim) distinct evecs
-  ;- so truncate the output
-  outsz = min(ndim, nobj)
-  nevec = outsz
-  ;- get the eigenvectors and normalize them
-  evec = coeff / rebin(eval, ndim, ndim)
-  evec /= sqrt(rebin(1#total(evec^2, 1), ndim, ndim))
-  bad = where(~finite(evec), badct)
-  if badct ne 0 then evec[bad] = 0
-
-  evec = evec[*,0:outsz-1]
-  eval = eval[0:outsz-1]
-  var = var[0:outsz-1]
   ;- populate the object
   self.ndim = ndim
   self.nobj = nobj
@@ -125,7 +98,6 @@ function pricom::init, data
   self.eval = ptr_new(eval)
   self.evec = ptr_new(evec)
   self.mean = ptr_new(mean)
-  self.var = ptr_new(var)
 
   return, 1
 end
@@ -153,6 +125,8 @@ end
 ;
 ; MODIFICATION HISTORY:
 ;  April 2010: Written by Chris Beaumont
+;  June 11 2010: Class now uses the cnb_pca function to calculate
+;  principal components. cnb.
 ;-
 pro pricom__define
   data = {pricom, nobj : 0, ndim: 0, nevec: 0, data : ptr_new(), $
