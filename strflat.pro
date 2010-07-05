@@ -20,6 +20,7 @@
 ;
 ; MODIFICATION HISTORY:
 ;  Jan 2010: Written by Chris Beaumont
+;  July 2010: Added separator keyword. cnb
 ;-
 function strflat, string, separator = separator
   nl = n_elements(separator) ne 0 ? separator : string(10B)
