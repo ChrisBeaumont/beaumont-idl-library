@@ -9,13 +9,17 @@
 ; INPUTS:
 ;  data: A vector of data. Must be non-negative and finite
 ;
+; KEYWORD PARAMETERS:
+;  rms: On output, will contain the "logarithmic rms" of the data --
+;  that is, 10^(stdev(alog10(data))). 
+;
 ; OUTPUTS:
 ;  The geometric mean of the data
 ;
 ; MODIFICATION HISTORY:
 ;  July 2010: Written by Chris Beaumont
 ;-
-function gmean, data
+function gmean, data, rms = rms
   
   if n_params() ne 1 then begin
      print, 'calling sequence:'
@@ -24,11 +28,13 @@ function gmean, data
   endif
 
   lo = min(data, /nan)
-  
+  rms = !values.f_nan
+
   if lo lt 0 || min(finite(data)) eq 0 then $
      message, 'Data must be finite and non-negative'
   if lo eq 0 then return, 0
 
+  rms = 10^stddev(alog10(data))
   return, 10^mean(alog10(data))
 end
 
