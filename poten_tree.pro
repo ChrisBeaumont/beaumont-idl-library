@@ -75,6 +75,7 @@ pro test
   nelem = fltarr(nstep)
   time1 = nelem
   time2 = nelem
+  time3 = nelem
   pot1 = nelem
   pot2 = nelem
 
@@ -97,6 +98,10 @@ pro test
      pot2[i] = poten_slow(pos, mass2)
      time2[i] = systime(/seconds) - t0
 
+     t0 = systime(/seconds)
+     junk = poten(pos, mass2)
+     time3[i] = systime(/seconds) - t0
+
      nelem[i] = n_elements(mass)
   endfor
 
@@ -113,6 +118,7 @@ pro test
   oplot, nelem, time2, color = fsc_color('red'), psym = 4
   oplot, nums, est1
   oplot, nums, est2, color = fsc_color('red')
+  oplot, nelem, time3, psym = 4, color = fsc_color('blue')
 end
 
 
@@ -134,4 +140,24 @@ pro test2
   endfor
   result /= 2.
   print, result
+end
+
+pro test3
+  ;- speedtests
+  sz = [16LL, 32, 64, 100]
+  speed = sz * 0
+  for i = 0, 3, 1 do begin
+     image = bytarr(sz[i], sz[i], sz[i])
+     num = sz[i]^3
+     indices, image, x, y, z
+     x = reform(x, num) & y = reform(y, num) & z = reform(z, num)
+     pos = transpose([[x],[y],[z]])
+     mass = replicate(1, n_elements(image))
+     t = systime(/seconds)
+     e = poten_tree(pos, mass, theta = 1)
+     speed[i] = systime(/seconds) - t
+  endfor
+  plot, sz^3, speed, thick = 3, charsize = 2, psym = -4
+  a = linfit(sz^3, speed)
+  stop
 end
