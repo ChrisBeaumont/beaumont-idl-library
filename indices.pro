@@ -32,13 +32,14 @@
 ;
 ; MODIFICATION HISTORY:
 ;  April 2010: Written by Chris Beaumont
+;  July 29 2010: Now handles 1D arrays correctly. cnb.
 ;-
 pro indices, array, x, y, z, a, b, c, d, e
-
+  nd = size(array, /n_dim)
   ind = lindgen(n_elements(array))
   ind = array_indices(array, ind)
+  if nd eq 1 then ind = reform(ind, 1, n_elements(ind))
   sz = size(ind)
-  nd = sz[1]
 
   if nd ge 1 then x = reshape(ind[0,*], array)
   if nd ge 2 then y = reshape(ind[1,*], array)
@@ -52,7 +53,10 @@ return
 end
 
 pro test
-  
+  a = findgen(10)
+  indices, a, x
+  print, x
+
   a = findgen(3,3)
   indices, a, x, y
   print, x
