@@ -1,3 +1,5 @@
+;XXXX not right yet-- see first test
+
 ;+
 ; PURPOSE:
 ;  This procedure computes the Helmholz decomposition of a 3D vector
@@ -30,9 +32,9 @@ pro hh_decomp, x, y, z, $
                dx, dy, dz, $
                cx, cy, cz
 
-  fx = fft(x)
-  fy = fft(y)
-  fz = fft(z)
+  fx = fft(x,/inverse)
+  fy = fft(y,/inverse)
+  fz = fft(z,/inverse)
   
   sz = size(x)
   fft_kind, fx, kx, ky, kz
@@ -50,20 +52,29 @@ pro hh_decomp, x, y, z, $
   ;dot2 = cx * kx + cy * ky + cz * kz
   ;assert, max(dot2) lt 1e-4
 
-  cx = real_part(fft(cx,/inverse))
-  cy = real_part(fft(cy,/inverse))
-  cz = real_part(fft(cz,/inverse))
+  ;cx = real_part(fft(cx,/inverse))
+  ;cy = real_part(fft(cy,/inverse))
+  ;cz = real_part(fft(cz,/inverse))
 
-  dx = real_part(fft(dx,/inverse))
-  dy = real_part(fft(dy,/inverse))
-  dz = real_part(fft(dz,/inverse))
+  ;dx = real_part(fft(dx,/inverse))
+  ;dy = real_part(fft(dy,/inverse))
+  ;dz = real_part(fft(dz,/inverse))
+
+
+  cx = real_part(fft(cx))
+  cy = real_part(fft(cy))
+  cz = real_part(fft(cz))
+
+  dx = real_part(fft(dx))
+  dy = real_part(fft(dy))
+  dz = real_part(fft(dz))
 
 end
 
 pro test
   im = fltarr(64, 64, 64)
   indices, im, x, y, z 
-  x -= 31.5 & y -= 31.5 & z -= 31.5
+  x -= 11.5 & y -= 31.5 & z -= 31.5
 
   ;- case 1. Velcoity field is curl free
   hh_decomp, x, y, z, $
