@@ -97,16 +97,8 @@ function pdiv, data, dimension, order = order
   for i = 0, 12 do begin
      if max(abs(coeff[i, *])) eq 0 then continue
      delt = 6 - i
-     case dimension of 
-        1: sh = shift(data, delt) 
-        2: sh = shift(data, 0, delt) 
-        3: sh = shift(data, 0, 0, delt) 
-        4: sh = shift(data, 0, 0, 0, delt) 
-        5: sh = shift(data, 0, 0, 0, 0, delt) 
-        6: sh = shift(data, 0, 0, 0, 0, 0, delt) 
-        7: sh = shift(data, 0, 0, 0, 0, 0, 0, delt) 
-        8: sh = shift(data, 0, 0, 0, 0, 0, 0, 0, delt) 
-     endcase
+     shift = replicate(0, nd) & shift[dimension-1] = delt
+     sh = shift(data, shift)
      result += sh * coeff[i, rows]
   endfor
   result /= denom
