@@ -22,7 +22,9 @@
 ;  March 2010: Written by Chris Beaumont
 ;  April 2010: Fixed a bug that crashed this function when called with
 ;              only one data point. cnb
-;  April 2010: Number of returned coeffs matches nterm.  
+;  April 2010: Number of returned coeffs matches nterm. cnb.
+;  August 2010: Truncated intermediate arrays when nterm <
+;               ndim. Speeds up execution. cnb.
 ;-  
 function pricom::project, data, nterm = nterm, coeffs = coeffs
   if ~keyword_set(nterm) then nterm = self.nevec else $
@@ -36,12 +38,13 @@ function pricom::project, data, nterm = nterm, coeffs = coeffs
   ;- dot the data into each eigenvector. Get coeffs
   coeffs = *self.evec ## transpose(norm) ;- N data cols by M evec rows
   
-  if nterm lt self.nevec then coeffs[*, nterm:*] = 0
+  ;- truncate arrays to nterm
+  coeffs = coeffs[*, 0:nterm-1]
   result = norm * 0
   nobj = n_elements(data) / sz[1]
   for i = 0, nobj - 1 do $
-     result[*, i] = total(rebin(coeffs[i,*], self.ndim, self.nevec) * *self.evec, 2)
-  coeffs = coeffs[*, 0:nterm-1]
+     result[*, i] = total(rebin(coeffs[i,0:nterm-1], self.ndim, nterm) * $
+                          (*self.evec)[*, 0:nterm-1], 2)
   return, result + mean
 end
 
