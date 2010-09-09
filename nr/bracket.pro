@@ -19,7 +19,7 @@
 ;
 ; CALLING SEQUENCE:
 ;  bracket, func, a, b, ax, bx, cx, fa, fb, fc, /verbose, _extra =
-;  extra
+;  extra, struct = struct
 ;
 ; INPUTS:
 ;  func: A string giving the name of the 1D function to bracket. The
@@ -46,6 +46,7 @@
 ;  _extra: Any extra keywords will be passed to FUNC
 ;  verbose: Set to an integer to control the amount of textual output
 ;  to produce (see VERBIAGE procedure for details) 
+;  struct: Set to a variable to receive the result in a structure.
 ;
 ; PROCEDURE:
 ;  The procedure is adapted from Numerical Recipes, 3rd ed., page
@@ -59,6 +60,7 @@
 ;
 ; MODIFICATION HISTORY:
 ;  June 2009: Written by Chris Beaumont
+;  August 2010: Added struct keyword. cnb.
 ;-
 pro bracket, func, a, b, $
              ax, bx, cx, $
@@ -172,6 +174,7 @@ while(fb ge fc) do begin
       fa = nan
       fb = nan
       fc = nan
+      struct={bracket, ax:ax, bx:bx, cx:cx, fa:fa, fb:fb, fc:fc}
       return
    endif
 
@@ -196,11 +199,13 @@ while(fb ge fc) do begin
          ax = bx
          bx = ux
          ;cx = cx
+         struct={bracket, ax:ax, bx:bx, cx:cx, fa:fa, fb:fb, fc:fc}
          return
       ;- case 1b: abu brackets a minimum. success
       endif else if (fu gt fb) then begin
          fc = fu
          cx = ux
+         struct={bracket, ax:ax, bx:bx, cx:cx, fa:fa, fb:fb, fc:fc}
          return
       endif
       ;- case 1c: u didn't bracket a minimum
@@ -217,6 +222,7 @@ while(fb ge fc) do begin
       if (fu  gt fc) then begin
          shift, fu, fc, fb, fa
          shift, ux, cx, bx, ax
+         struct={bracket, ax:ax, bx:bx, cx:cx, fa:fa, fb:fb, fc:fc}
          return
       
       ;- case 2b: fu < fc. abc -> bcu
@@ -238,6 +244,7 @@ while(fb ge fc) do begin
 endwhile 
       
 ;- abc brackets a minimum. Don't need to do anything
+struct={bracket, ax:ax, bx:bx, cx:cx, fa:fa, fb:fb, fc:fc}
 return
 
 failure:

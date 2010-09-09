@@ -25,6 +25,8 @@
 ;  April 2010: Number of returned coeffs matches nterm. cnb.
 ;  August 2010: Truncated intermediate arrays when nterm <
 ;               ndim. Speeds up execution. cnb.
+;  August 10 2010: Further optimization when nterm < ndim. cnb.
+;  August 18 2010: Fixed spelling error in definition of get_mean. cnb.
 ;-  
 function pricom::project, data, nterm = nterm, coeffs = coeffs
   if ~keyword_set(nterm) then nterm = self.nevec else $
@@ -36,14 +38,19 @@ function pricom::project, data, nterm = nterm, coeffs = coeffs
   norm = data - mean
   
   ;- dot the data into each eigenvector. Get coeffs
-  coeffs = *self.evec ## transpose(norm) ;- N data cols by M evec rows
-  
+  ;- self.evec: [ndim, ntraining]
+  ;- norm: [ndim, ndata]
+  ;- evec ## tr(norm) : [ndata, ntrain]
+  if nterm lt self.nevec then $
+     coeffs = (*self.evec)[*, 0:nterm-1] ## transpose(norm) $ ;- N data cols by M evec rows
+  else $
+     coeffs = (*self.evec) ## transpose(norm) ;- N data cols by M evec rows
+
   ;- truncate arrays to nterm
-  coeffs = coeffs[*, 0:nterm-1]
   result = norm * 0
   nobj = n_elements(data) / sz[1]
   for i = 0, nobj - 1 do $
-     result[*, i] = total(rebin(coeffs[i,0:nterm-1], self.ndim, nterm) * $
+     result[*, i] = total(rebin(coeffs[i,*], self.ndim, nterm) * $
                           (*self.evec)[*, 0:nterm-1], 2)
   return, result + mean
 end
@@ -70,7 +77,7 @@ end
 ; PURPOSE:
 ;  Get the mean of the training data
 ;-
-function pricomm::get_mean
+function pricom::get_mean
   return, *self.mean
 end
 
