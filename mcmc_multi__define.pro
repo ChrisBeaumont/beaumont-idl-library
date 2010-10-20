@@ -86,6 +86,7 @@ pro mcmc_multi::run
      if (++thinStep) eq self.thin then begin
         thinStep = 0
         (*self.chain)[*, i / self.thin] = current
+        (*self.logf)[*, i/self.thin] = currentValue
      endif
 
   endfor  
@@ -171,6 +172,7 @@ function mcmc_multi::init, seed, nstep, data, thin = thin
   endif
 
   self.chain = ptr_new(replicate(seed[0], self.nchain, nstep / self.thin))
+  self.logf = ptr_new(dlbarr(self.nchain, nstep / self.thin))
   self.nsuccess_multi = ptr_new(replicate(0L, self.nchain))
   self.nfail_multi = ptr_new(replicate(0L, self.nchain))
   self.nstep = nstep

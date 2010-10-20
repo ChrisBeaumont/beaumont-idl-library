@@ -34,7 +34,7 @@
 ;  Oct 3 2009: Optimized so that logTargetDistribution is only ever
 ;            evaluated once per link
 ;-
-pro mcmc::run
+pro mcmc::run, verbose = verbose
   compile_opt idl2
   common mcmc_common, seed      ;- save the random seed value
 
@@ -43,9 +43,9 @@ pro mcmc::run
   
   nsuccess = 0 & nfail = 0
   thinStep = 0
-
+  cr = string(13B)
   for i = 0, self.nstep - 1, 1 do begin
-     
+     if keyword_set(verbose) then print, 1. * i / self.nstep, cr, format='($, e0.2, a)'
      ;- pick a new trial link
      trial = self->selectTrial(current, transitionRatio = transitionRatio)
      newValue = self -> logTargetDistribution(trial)
@@ -63,6 +63,7 @@ pro mcmc::run
      if (++thinStep) eq self.thin then begin
         thinStep = 0
         (*self.chain)[i / self.thin] = current
+        (*self.logf)[i / self.thin] = currentValue
      endif
 
   endfor  
@@ -146,7 +147,8 @@ end
 ; MODIFICATION HISTORY:
 ;  September 2009: Written by Chris Beaumont
 ;-
-function mcmc::getChain
+function mcmc::getChain, logf = logf
+  logf = *self.logf
   return, *self.chain
 end
 
@@ -248,6 +250,7 @@ function mcmc::init, seed, nstep, data, thin = thin
   self.seed = ptr_new(seed)
   self.data = ptr_new(data)
   self.chain = ptr_new(replicate(seed, nstep / self.thin))
+  self.logf = ptr_new(dblarr(nstep / self.thin))
   self.nstep = nstep
   return, 1
 end
@@ -267,6 +270,7 @@ pro mcmc::cleanup
   ptr_free, self.seed
   ptr_free, self.chain
   ptr_free, self.data
+  ptr_free, self.logf
   return
 end
 
@@ -280,11 +284,13 @@ end
 ;
 ; MODIFICATION HISTORY:
 ;  September 2009: Written by Chris Beaumont
+;  Oct 2010: Added logf field
 ;-
 pro mcmc__define
   data = {mcmc, $
           seed : ptr_new(), $   ;- the first link in the chain
           chain : ptr_new(), $  ;- all of the links
+          logf : ptr_new(), $   ;- logTargetDistribution, evaluated at chain links
           data : ptr_new(), $   ;- any data needed
           nsuccess : 0L, $      ;- number of accepted trial links
           nfail : 0L, $         ;- number of rejected trial links

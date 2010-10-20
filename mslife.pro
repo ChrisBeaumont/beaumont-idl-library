@@ -26,5 +26,5 @@ function mslife, mass
      return, !values.f_nan
   endif
 
-  return, 10^10 * mass^(-2.9)
+  return, 1d10 * mass^(-2.9)
 end

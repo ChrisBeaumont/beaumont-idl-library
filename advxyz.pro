@@ -25,6 +25,7 @@
 ; MODIFICATION HISTORY:
 ;  March 2010: Written by Chris Beaumont
 ;  May 2010: Fixed a bug in call to ad2xy. cnb.
+;  Sep 2010: Fixed a bug when testing whether head is a string array. cnb.
 ;-
 pro advxyz, head, a, d, v, x, y, z
   compile_opt idl2
@@ -37,7 +38,7 @@ pro advxyz, head, a, d, v, x, y, z
   endif
 
   if n_elements(head) eq 0 || $
-     size(head, /tname) ne 'STRING' || size(head, /n_dimen) $
+     size(head, /tname) ne 'STRING' || (size(head, /n_dimen) ne 1) $
   then message, 'HEAD must be a string array'
   sz = n_elements(a)
   if sz eq 0 || n_elements(d) ne sz || n_elements(v) ne sz then $
