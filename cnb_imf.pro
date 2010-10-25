@@ -42,51 +42,51 @@
 function cnb_imf, mass, noturnover = noturnover, random = random, $
               muench = muench, malpha0 = malpha0
 
-compile_opt idl2
+  compile_opt idl2
 
-;- check inputs
-doMass = n_elements(mass) ne 0
-doRandom = keyword_set(random)
-noTurn = keyword_set(noturnover)
-
-if ~doMass && ~doRandom then begin
-   print, 'imf calling sequence:'
-   print, 'result = cnb_imf([mass, /noturnover, random=random, muench = muench])'
-   return, !values.f_nan
-endif
-
-if doRandom && doMass then message,$
-   'Cannot set RANDOM and provide masses'
-
-if doRandom && noTurn then message, $
-   'Cannot set both RANDOM and NOTURNOVER'
-
-if keyword_set(noturnover) then return, ms^(-2.35D)
-
-;-imf
-if keyword_set(muench) then begin
-   alpha = [.27, 1.15, 2.21] * (-1)
-   m = [.025, .12, .6]
-   if keyword_set(malpha0) then alpha[2] = malpha0 * (-1)
-endif else begin
-   alpha = [ 0, 1.05, 2.35] * (-1)
-   m =     [.00, .07,  .5]
-endelse
-
-
+  ;- check inputs
+  doMass = n_elements(mass) ne 0
+  doRandom = keyword_set(random)
+  noTurn = keyword_set(noturnover)
+  
+  if ~doMass && ~doRandom then begin
+     print, 'imf calling sequence:'
+     print, 'result = cnb_imf([mass, /noturnover, random=random, muench = muench])'
+     return, !values.f_nan
+  endif
+  
+  if doRandom && doMass then message,$
+     'Cannot set RANDOM and provide masses'
+  
+  if doRandom && noTurn then message, $
+     'Cannot set both RANDOM and NOTURNOVER'
+  
+  if keyword_set(noturnover) then return, ms^(-2.35D)
+  
+  ;-imf
+  if keyword_set(muench) then begin
+     alpha = [.27, 1.15, 2.21] * (-1)
+     m = [.025, .12, .6]
+     if keyword_set(malpha0) then alpha[2] = malpha0 * (-1)
+  endif else begin
+     alpha = [ 0, 1.05, 2.35] * (-1)
+     m =     [.00, .07,  .5]
+  endelse
+  
+  
 ;- pull objects from the imf distribution   
-if doRandom then begin
-   common imf_common, seed
-   masses = findgen(1d5)/1d3
-   imf = cnb_imf(masses, muench = muench, malpha0 = malpha0)
-   cdf = total(imf, /cumul) / total(imf)
-   rand = randomu(seed, random)
-   result = interpol(masses, cdf, rand) 
-   return, result
-endif
-
+  if doRandom then begin
+     common imf_common, seed
+     masses = findgen(1d5)/1d3
+     imf = cnb_imf(masses, muench = muench, malpha0 = malpha0)
+     cdf = total(imf, /cumul) / total(imf)
+     rand = randomu(seed, random)
+     result = interpol(masses, cdf, rand) 
+     return, result
+  endif
+  
 ;- evaluate the power law
-return, pwpl(m, alpha, x = mass)
+  return, pwpl(m, alpha, x = mass)
 
 end
 
