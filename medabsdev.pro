@@ -22,6 +22,7 @@
 ;  sigma: If set, divide the median absolute deviation by
 ;  inverseErf(0.5) * sqrt(2). This scales the MAD to an approximation
 ;  for sigma (assuming a Gaussian distribution)
+;  median: On output, holds the median of the data
 ;
 ; OUTPUTS:
 ;  median( |data - median(data)| )
@@ -43,8 +44,9 @@
 ;  Aug 2009: Written by Chris Beaumont
 ;  Sep 2009: Added /SIGMA keyword. cnb.
 ;  Oct 2009: Added input checking. cnb.
+;  Oct 2010: Added median keyword. cnb.
 ;-
-function medabsdev, data, sigma = sigma, dim = dim, width = width
+function medabsdev, data, sigma = sigma, median = median
   
   compile_opt idl2
   on_error, 2
@@ -56,7 +58,7 @@ function medabsdev, data, sigma = sigma, dim = dim, width = width
      return, !values.f_nan
   endif
 
-  med = median(data)
+  med = median(data) & median = med
   absdev = abs(data - med)
   result = median(absdev)
   if keyword_set(sigma) then result /= 0.6744897501960817D
