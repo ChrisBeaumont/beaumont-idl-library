@@ -27,7 +27,7 @@
 ;-
 function strtrun, string, search
 
-  compile_opt idl2
+  compile_opt idl2  
   on_error, 2
 
   hit = strpos(string, search, /reverse_search)
