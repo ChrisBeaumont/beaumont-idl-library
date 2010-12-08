@@ -28,6 +28,7 @@
 ;
 ; MODIFICATION HISTORY:
 ;  March 2010: Written by Chris Beaumont
+;  December 2010: Fixed a big when checking type of coordsys
 ;-
 function map_init, center = center, $
               width = width, $
@@ -97,7 +98,7 @@ function map_init, center = center, $
   crpix = (naxis+1) / 2.
 
   ;- define coordinate system keywords
-  if n_elements(coordsys) eq 0 || strupcase(coordys) eq 'FK5' then begin
+  if n_elements(coordsys) eq 0 || strupcase(coordsys) eq 'FK5' then begin
      ctype1='RA---TAN'
      ctype2='DEC--TAN'
   endif else if strupcase(coordsys) eq 'GAL' then begin
