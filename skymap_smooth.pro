@@ -77,7 +77,7 @@ pro skymap_smooth, map, x, y, val, dval, $
         message, 'x, y, val, and dval not the same size'
   
   if ~keyword_set(fwhm) then $
-     fwhm = sxpar(map.head, 'naxis2') * abs(sxpar('cdelt2')) / 100.
+     fwhm = sxpar(map.head, 'naxis2') * abs(sxpar(map.head, 'cdelt2')) / 100.
   sigma = fwhm / (2 * sqrt(2 * alog(2)))
   if ~keyword_set(truncate) then truncate = fwhm * 2
 
@@ -112,7 +112,9 @@ pro skymap_smooth, map, x, y, val, dval, $
   sy = rebin(1#indgen(stampsz) - stampsz / 2, stampsz, stampsz, /sample)
   
   ;- loop over sources, vectorize on pixels
+  pbar, /new
   for i = 0, nobj - 1, 1 do begin
+     if (i mod 20) eq 0 then pbar, 1. * i / nobj
      tx = floor(sx + dx[i])
      ty = floor(sy + dy[i])
      sa = ma[tx, ty] & sd = md[tx, ty]
@@ -135,7 +137,8 @@ pro skymap_smooth, map, x, y, val, dval, $
      var[l:r, b:t] += w[sl:sr, sb:st] * dval[i]^2
      weight2[l:r, b:t] += w[sl:sr, sb:st]^2
   endfor
-  
+  pbar, /close
+
   result /= weight
   emap = var / weight^2
   bad = where(weight eq 0, ct)
@@ -181,13 +184,18 @@ pro test
   tvscl, bytscl(badim), 1
 
   x /= sz[1] & y /= sz[2]
-  print, npts / 3600.
   map = map_init(center = [.5, .5], width = [1,1], pixwidth = [sz[1], sz[2]])
-  
+  fwhm = .005
+  map2 = map
   skymap_smooth, map, x, y, sample, sample * 0 + max(data) / 1d4, $
-                 fwhm = .2, truncate = .4
-  tvscl, map.map, 1, /nan
-  stop
+                 fwhm = fwhm, truncate = fwhm * 2
+  tvscl, map.map, 2, /nan
+  map2 = map
+  o = obj_new('skymap', map2, x,y,sample, sample * 0 + max(data)/1d4, $
+              fwhm = fwhm, truncate = fwhm * 2)
+  o->makeMap
+  tvscl, (o->getMap()).map, 3, /nan
+  print, minmax((o->getMap()).map - map.map)
   return
   
 
