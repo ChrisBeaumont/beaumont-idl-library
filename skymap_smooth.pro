@@ -48,6 +48,7 @@
 ; MODIFICATION HISTORY:
 ;  March 2010: Written by Chris Beaumont. Meant to replace
 ;  SMOOTHMAP.pro.
+;  Dec 2010: Added /SAMPLE to REBIN calls. cnb.
 ;-     
 pro skymap_smooth, map, x, y, val, dval, $
                    fwhm = fwhm, $
@@ -89,8 +90,8 @@ pro skymap_smooth, map, x, y, val, dval, $
   ;- map pixels to sky coords
   nx = sxpar(map.head, 'naxis1')
   ny = sxpar(map.head, 'naxis2')
-  mx = rebin(findgen(nx), nx, ny)
-  my = rebin(1#findgen(ny), nx, ny)
+  mx = rebin(findgen(nx), nx, ny, /sample)
+  my = rebin(1#findgen(ny), nx, ny, /sample)
   xyad, map.head, mx, my, ma, md
 
   ;- data sky coords to pixels
@@ -107,8 +108,8 @@ pro skymap_smooth, map, x, y, val, dval, $
   stampsz = stampsz < ( 2 * (nx > ny))
   
   ;- stamp pixel coords
-  sx = rebin(indgen(stampsz) - stampsz / 2, stampsz, stampsz)
-  sy = rebin(1#indgen(stampsz) - stampsz / 2, stampsz, stampsz)
+  sx = rebin(indgen(stampsz) - stampsz / 2, stampsz, stampsz, /sample)
+  sy = rebin(1#indgen(stampsz) - stampsz / 2, stampsz, stampsz, /sample)
   
   ;- loop over sources, vectorize on pixels
   for i = 0, nobj - 1, 1 do begin
