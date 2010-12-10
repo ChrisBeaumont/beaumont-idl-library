@@ -154,7 +154,7 @@ pro skymap::makeMap
 
   ;- loop over sources, vectorize on pixels
   nobj = n_elements(x)
-  for i = 0, nobj - 1, 1 do begin
+  for i = 0L, nobj - 1, 1 do begin
 
      ;- extract postage stamp
      tx = floor(sx + dx[i])

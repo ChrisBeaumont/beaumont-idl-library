@@ -146,7 +146,7 @@ function nicer, mag, dmag, $
   ;- find Av and sigma_av from equations 12-13
   av = dblarr(nobj)
   sv = dblarr(nobj)
-  for i = 0, nobj - 1, 1 do begin
+  for i = 0L, nobj - 1, 1 do begin
      ci = invert(cov[*,*,i], stat, /double)
      b = (ci ## ks) / ((ks ## (ci ## ks))[0])
      av[i] = total(b * (m_color[*,i] - color))
