@@ -6,6 +6,16 @@
 ;  This class creates a smoothed sky map from an irregularly spaced
 ;  set of measurements. The default smoothing kernel is a gaussian.
 ;
+; The smoothed map is evaluated according to
+;  m(x,y) = sum( w_i v_i) / sum(w_i)
+;
+; where v_i is the ith sampled data point and w_i is a smoothing
+; function. In this class, w_i is a gaussian centered on v_i, with a
+; fwhm specified by the user. 
+;
+; The variance map is given by
+;  v(x,y) = sum(w_i^2 v_i) / sum(w_i)^2
+;
 ; METHODS:
 ;  weight: Implementation of the weighting kernel.
 ;  getMap: return the smoothed map
@@ -14,17 +24,24 @@
 ;  init: Create the object
 ;  cleanup: Destroy the object
 ;
+; SUPERCLASSES:
+;  none
+;
+; SUBCLASSES: 
+;  nicest: Overloads the weight method to implement Marco
+;          Lombardi's NICEST algorithm.
+;
 ;-
 
 ;+
 ; PURPOSE:
-;  This function evaluates the weight/smoothing kernel applied on
+;  This function evaluates the gaussian smoothing kernel applied on
 ;  source "id" at location (x,y)
 ;
 ; INPUTS:
-;  id: The index of the source to consider
-;   x: The x location in sky coordinates
-;   y: The y location in sky coordinates
+;  id: The index of the source to consider. scalar
+;   x: The x location in sky coordinates, scalar or array
+;   y: The y location in sky coordinates, scalar or array
 ;
 ; OUTPUTS:
 ;  w_id(x,y)
@@ -88,6 +105,55 @@ pro skymap::writeFits, name, varname = varname
 end
   
 
+pro skymap::makeMapClip, clip = clip, lo = lo, hi = hi
+
+  MAXITER = 5
+  MAX_REJECT = .2
+  CONVERGE_TOL = .01
+
+  a = *self.x & d = *self.y & val = *self.val
+  head = (*self.map).head
+  adxy, head, a, d, x, y
+
+  for i = 0, MAXITER - 1, 1 do begin
+     if self.verbose then print, '      Sigma Clipping. Iteration '+strtrim(i+1,2)
+
+     self->makeMap     
+     
+     ;- flag outliers
+     delta = ((*self.map).map[x, y] - val) / sqrt((*self.emap).map)
+     if keyword_set(lo) then begin
+        bad = (delta lt -1 * clip)
+     endif else if keyword_set(hi) then begin
+        bad = (delta gt clip)
+     endif else begin
+        bad = abs(delta) gt clip
+     endelse
+     good = ~bad
+
+     if total(bad) gt n_elements(x) * MAX_REJECT then begin
+        message, 'Too many points rejected. Aborting', /con
+        return
+     endif     
+
+     if self.verbose then $
+        print, total(bad), format='("      Number of rejects: ", i)'
+
+     ;- converged on a set of rejects
+     if total(good ne *self.included) lt CONVERGE_TOL * n_elements(x) then begin
+        if self.verbose then print, '      CONVERGED.'
+        return
+     endif
+
+     *self.included = good
+  endfor
+  
+  message, 'Sigma clipping did not converge.', /con
+end
+     
+     
+     
+
 ;+
 ; PURPOSE:
 ;  This main procedure to create the smoothed map
@@ -114,11 +180,11 @@ pro skymap::makeMap
   ;- initialize variables
   result = (*self.map).map * 0
   weight = result
-  weight2 = result
   var = result
   head = (*self.map).head
   x = *self.x &  y = *self.y
   val = *self.val & dval = *self.dval
+  doprint = self.verbose
 
   ;- lots of coordinates here:
   ;- (mx,my) map pixel coords
@@ -154,7 +220,14 @@ pro skymap::makeMap
 
   ;- loop over sources, vectorize on pixels
   nobj = n_elements(x)
+  if doprint then begin
+     print, nobj, stampsz, format='("Measurements: ", i0, "  Stamp size:  ", i0, " pixels")'
+     pbar, /new
+  endif
+
   for i = 0L, nobj - 1, 1 do begin
+     if doprint && (i mod 1500) eq 0 then pbar, 1. * i / nobj
+     if ~(*self.included)[i] then continue
 
      ;- extract postage stamp
      tx = floor(sx + dx[i])
@@ -166,13 +239,14 @@ pro skymap::makeMap
             result, tx[0], ty[0], stampsz, stampsz, /add
      stamp, w, 0, 0, $
             weight, tx[0], ty[0], stampsz, stampsz, /add
-     stamp, w * dval[i]^2, 0, 0, $
+     stamp, w^2 * dval[i]^2, 0, 0, $
             var, tx[0], ty[0], stampsz, stampsz, /add
-     stamp, w^2, 0, 0, $
-            weight2, tx[0], ty[0], stampsz, stampsz, /add
   endfor
+  if doprint then pbar, /close
+
   result /= weight
   emap = var / weight^2
+
   bad = where(weight eq 0, ct)
   if ct ne 0 then begin
      result[bad] = !values.f_nan
@@ -215,7 +289,7 @@ function skymap::init, map, x, y, $
   if n_params() ne 5 then begin
      print, 'calling sequence'
      print, ' obj = obj_new("skymap", map, x, y, val, dval, '
-     print, '                 [fwhm = fwhm, truncate = truncate])'
+     print, '                 [fwhm = fwhm, truncate = truncate, /verbose])'
      return, 0
   endif
 
@@ -235,8 +309,10 @@ function skymap::init, map, x, y, $
   sigma = fwhm / (2 * sqrt(2 * alog(2)))
   if ~keyword_set(truncate) then truncate = fwhm * 2
 
+  sxaddpar, map.head, 'SIGMA', sigma, 'Smoothing kernel, DEGREES'
   
   self.x = ptr_new(x)
+  self.included = ptr_new(byte(x) * 0B + 1B, /no_copy)
   self.y = ptr_new(y)
   self.val = ptr_new(val)
   self.dval = ptr_new(dval)
@@ -247,6 +323,7 @@ function skymap::init, map, x, y, $
   self.sigma = sigma
   self.truncate = truncate
   self.verbose = keyword_set(verbose)
+
 
   return, 1
 end
@@ -259,6 +336,7 @@ end
 pro skymap__define
   data = {skymap, x:ptr_new(), $
           y:ptr_new(), val:ptr_new(), dval:ptr_new(), $
+          included:ptr_new(), $
           map:ptr_new(), emap:ptr_new(), $
           truncate:0., sigma:0., verbose:0}
 end

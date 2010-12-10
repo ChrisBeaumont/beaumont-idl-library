@@ -192,10 +192,12 @@ pro test
   tvscl, map.map, 2, /nan
   map2 = map
   o = obj_new('skymap', map2, x,y,sample, sample * 0 + max(data)/1d4, $
-              fwhm = fwhm, truncate = fwhm * 2)
-  o->makeMap
+              fwhm = fwhm, truncate = fwhm * 2, /verbose)
+  o->makeMapClip, clip = 3
+
   tvscl, (o->getMap()).map, 3, /nan
   print, minmax((o->getMap()).map - map.map)
+
   return
   
 
