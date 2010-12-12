@@ -21,6 +21,7 @@
 ;  getMap: return the smoothed map
 ;  writeFits: output the map to a fits file
 ;  makeMap: calculate the smoothed map
+;  makeMapClip: Iteratively calculate map with sigma clipping
 ;  init: Create the object
 ;  cleanup: Destroy the object
 ;
@@ -104,16 +105,59 @@ pro skymap::writeFits, name, varname = varname
      writefits, varname, (*self.emap).map, (*self.emap).head
 end
   
+;+
+; PURPOSE:
+;  This procedure iteratively computes the smooth map with sigma
+;  clipping.
+;
+; DESCRIPTION:
+;  makeMap is iteratively called and, at each iteration, each data
+;  point v_i is compared to the map value map(x_i, y_i). If the two
+;  values disagree by more than CLIP * sigma_map(x_i, y_i), the point
+;  is rejected. The map is recalculated with valid points until
+;  convergence. 
+;
+; INPUTS:
+;  clip: The outlier threshhold (see above). 3 is typical
+; 
+; KEYWORD PARAMETERS:
+;  lo: set to flag only the lo-valued outliers.
+;  hi: set to flag only the hi-valued outliers.
+;  tol: Specifiy a convergence tolerance. The clipping has converged
+;       when fewer than TOL * n_object objects change their
+;       inlier/outlier classification. Defaults to .01
+;  max_reject: Set to the max fraction of objects that can be flagged
+;              as outliers before failure. Defaults to .2
+;  maxiter: The maximum number of clipping iterations before
+;           failure. Defaults to 5.
+;  miniter: The minimum number of clipping iterations. Default is 2.
+;-
+pro skymap::makeMapClip, clip, lo = lo, hi = hi, $
+                         tol = tol, max_reject = max_reject, $
+                         maxiter = maxiter, miniter = miniter
 
-pro skymap::makeMapClip, clip = clip, lo = lo, hi = hi
+  if n_params() ne 1 then begin
+     print, 'Calling sequence:'
+     print, '   skymap->makeMapClip(clip, [/lo, /hi, '
+     print, '           max_reject = max_reject, tol = tol'
+     print, '           maxiter = maxiter, miniter = miniter]'
+     return
+  endif
 
-  MAXITER = 5
-  MAX_REJECT = .2
-  CONVERGE_TOL = .01
+  if keyword_set(lo) && keyword_set(hi) then $
+     message, 'Cannot set both lo and hi'
 
-  a = *self.x & d = *self.y & val = *self.val
+  if ~is_scalar(clip) || clip le 0 then $
+     message, 'Clip must be a positive scalar'
+
+  MINITER = keyword_set(miniter) ? miniter : 2
+  MAXITER = keyword_set(maxiter) ? maxiter : 5
+  MAX_REJECT = keyword_set(max_reject) ? max_reject : .2
+  CONVERGE_TOL = keyword_set(tol) ? tol : .01
+
   head = (*self.map).head
-  adxy, head, a, d, x, y
+  adxy, head, *self.x, *self.y, x, y
+  val = *self.val
 
   for i = 0, MAXITER - 1, 1 do begin
      if self.verbose then print, '      Sigma Clipping. Iteration '+strtrim(i+1,2)
@@ -121,7 +165,8 @@ pro skymap::makeMapClip, clip = clip, lo = lo, hi = hi
      self->makeMap     
      
      ;- flag outliers
-     delta = ((*self.map).map[x, y] - val) / sqrt((*self.emap).map)
+     sigma = sqrt((*self.emap).map[x,y] + *self.dval^2)
+     delta = (val - (*self.map).map[x, y]) / sigma
      if keyword_set(lo) then begin
         bad = (delta lt -1 * clip)
      endif else if keyword_set(hi) then begin
@@ -131,16 +176,18 @@ pro skymap::makeMapClip, clip = clip, lo = lo, hi = hi
      endelse
      good = ~bad
 
-     if total(bad) gt n_elements(x) * MAX_REJECT then begin
-        message, 'Too many points rejected. Aborting', /con
-        return
-     endif     
-
      if self.verbose then $
         print, total(bad), format='("      Number of rejects: ", i)'
 
+     if total(bad) gt n_elements(x) * MAX_REJECT then begin
+        message, 'Too many points rejected. Aborting', /con
+        stop
+        return
+     endif     
+
      ;- converged on a set of rejects
-     if total(good ne *self.included) lt CONVERGE_TOL * n_elements(x) then begin
+     if (i+1) ge MINITER && $
+        total(good ne *self.included) lt CONVERGE_TOL * n_elements(x) then begin
         if self.verbose then print, '      CONVERGED.'
         return
      endif
