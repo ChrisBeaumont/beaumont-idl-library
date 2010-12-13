@@ -4,7 +4,8 @@
 ;
 ; PURPOSE:
 ;  This class creates a smoothed sky map from an irregularly spaced
-;  set of measurements. The default smoothing kernel is a gaussian.
+;  set of measurements. The default smoothing kernel is a
+;  gaussian. The class also implements sigma clipping.
 ;
 ; The smoothed map is evaluated according to
 ;  m(x,y) = sum( w_i v_i) / sum(w_i)
@@ -19,6 +20,8 @@
 ; METHODS:
 ;  weight: Implementation of the weighting kernel.
 ;  getMap: return the smoothed map
+;  getIncluded: return a 1/0 bit vectors, listing which data points
+;               were included/clipped.
 ;  writeFits: output the map to a fits file
 ;  makeMap: calculate the smoothed map
 ;  makeMapClip: Iteratively calculate map with sigma clipping
@@ -77,6 +80,17 @@ function skymap::getMap, variance = variance
   return, *self.map
 end
 
+
+;+
+; PURPOSE:
+;  This function returns a 1/0 bit vector, listing whether each data
+;  point was included/clipped when calculating the smoothed map.
+;-
+function skymap::getIncluded
+  return, *self.included
+end
+
+
 ;+
 ; PURPOSE:
 ;  Output the map data to a fits image
@@ -104,6 +118,7 @@ pro skymap::writeFits, name, varname = varname
   if keyword_set(varname) then $
      writefits, varname, (*self.emap).map, (*self.emap).head
 end
+
   
 ;+
 ; PURPOSE:
