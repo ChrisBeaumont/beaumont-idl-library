@@ -41,7 +41,7 @@ pro nicest::mapeMap, nocorr = nocorr
   tmp = *self.val
   *self.val = *self.dval^2
   map = *self.map
-  emap *self.emap
+  emap = *self.emap
   self->nicer::makeMap
   *self.map = map - *self.map * self.beta
   *self.emap = emap
