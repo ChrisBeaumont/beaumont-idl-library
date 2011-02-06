@@ -177,10 +177,14 @@ end
 ; CALLING SEQUENCE:
 ;  result = stack->toArray()
 ;
+; INPUTS:
+;  count: On output, holds the number of elements in the stack.
+;
 ; OUTPUTS:
-;  The stack in array form
+;  The stack in array form, or -1 if the tack is empty
 ;-  
-function stack::toArray, nocopy = nocopy
+function stack::toArray, count, nocopy = nocopy
+  count = ptr_valid(self.data) ? self.size : 0
   if ptr_valid(self.data) then begin
      if keyword_set(nocopy) then $
         return, temporary((*(self.data))[0:self.size - 1]) $
