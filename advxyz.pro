@@ -9,6 +9,12 @@
 ;  a: List of sky x coordinates (alpha, lon). Scalar or vector
 ;  d: List of sky y coordinates (dec, lat). Scalar or vector
 ;  v: List of sky z coordinates (velocity, freq). Scalar or vector.
+;
+; KEYWORD PARAMETERS:
+;  ortho: Set this keyword if the third axis of the input coordinates
+;         is orthogonal to the first two; that is, if adv describe a
+;         cube, where a and d are constant across the cube. When this
+;         is true, the computation can be performed more quickly.
 ; 
 ; OUTPUTS:
 ;  x: Pixel x coordinates. These are zero-indexed, IDL style.
@@ -25,9 +31,12 @@
 ; MODIFICATION HISTORY:
 ;  March 2010: Written by Chris Beaumont
 ;  May 2010: Fixed a bug in call to ad2xy. cnb.
-;  Sep 2010: Fixed a bug when testing whether head is a string array. cnb.
+;  Sep 2010: Fixed a bug when testing whether head is a string
+;            array. cnb.
+;  June 2011: Optimized for the case where a,d,v describe a cube with
+;             a,d constant along slices. Added ortho keyword. cnb.
 ;-
-pro advxyz, head, a, d, v, x, y, z
+pro advxyz, head, a, d, v, x, y, z, ortho = ortho
   compile_opt idl2
 
   ;- check inputs
@@ -48,7 +57,20 @@ pro advxyz, head, a, d, v, x, y, z
 
   ;- do the work
   extast3, head, struct
-  ad2xy, a, d, *struct.extast, x, y
+
+  ;- special case: xyz describe a cube, with xy identical
+  ;- at each slice
+  sz = size(v)
+  if keyword_set(ortho) || $
+     (sz[0] eq 3 && array_equal(max(a, min=lo, dim=3), lo) && $
+     array_equal(max(d, min=lo, dim=3), lo)) then begin
+     aa = reform(a[*,*,0])
+     dd = reform(d[*,*,0])
+     ad2xy, aa, dd, *struct.extast, x, y
+     x = rebin(x, sz[1], sz[2], sz[3])
+     y = rebin(y, sz[1], sz[2], sz[3])
+  endif else $       
+     ad2xy, a, d, *struct.extast, x, y
 
   z = struct.crpix3 + (v - struct.crval3) / struct.cdelt3 - 1
   extast3, head, struct, /delete
