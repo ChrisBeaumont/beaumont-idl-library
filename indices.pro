@@ -39,6 +39,7 @@
 ;  April 2010: Written by Chris Beaumont
 ;  July 29 2010: Now handles 1D arrays correctly. cnb.
 ;  Mar 15 2011: Added parameter checking and center keyword. cnb.
+;  June 21 2011: Fixed bug when center=0
 ;-
 pro indices, array, x, y, z, a, b, c, d, e, center = center
   if n_params() eq 0 then begin
@@ -47,10 +48,10 @@ pro indices, array, x, y, z, a, b, c, d, e, center = center
      return
   endif
   nd = size(array, /n_dim)
-  if keyword_set(center) && n_elements(center) ne nd then $
+  if n_elements(center) ne 0 && n_elements(center) ne nd then $
      message, 'Number of elements in center must match dimension of array'
 
-  if keyword_set(center) then begin
+  if n_elements(center) ne 0 then begin
      sz = size(array)
      delta = center - (sz[1:nd] - 1) / 2.
   endif else delta = intarr(nd)
@@ -89,6 +90,9 @@ pro test
   assert, array_equal(x, [[4,5,6], [4,5,6], [4,5,6]])
   assert, array_equal(y, [[-1,-1,-1],[0,0,0],[1,1,1]])
 
+  a = findgen(3)
+  indices, a, x, center = 0
+  assert, array_equal(x, [-1, 0, 1])
 
   print, 'all tests passed'
 end
