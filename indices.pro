@@ -40,7 +40,7 @@
 ;  July 29 2010: Now handles 1D arrays correctly. cnb.
 ;  Mar 15 2011: Added parameter checking and center keyword. cnb.
 ;  June 21 2011: Fixed bug when center=0. cnb.
-;  June 23 2011: Optimized memory and computation for large arrays. cnb.
+;  June 23 2011: Optimized for speed and memory (10x speedup). cnb.
 ;-
 pro indices, array, x, y, z, a, b, c, d, e, center = center
   compile_opt idl2
