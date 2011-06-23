@@ -39,37 +39,82 @@
 ;  April 2010: Written by Chris Beaumont
 ;  July 29 2010: Now handles 1D arrays correctly. cnb.
 ;  Mar 15 2011: Added parameter checking and center keyword. cnb.
-;  June 21 2011: Fixed bug when center=0
+;  June 21 2011: Fixed bug when center=0. cnb.
+;  June 23 2011: Optimized memory and computation for large arrays. cnb.
 ;-
 pro indices, array, x, y, z, a, b, c, d, e, center = center
+  compile_opt idl2
+  on_error, 2
+
   if n_params() eq 0 then begin
      print, 'calling sequence'
      print, 'indices, array, [x, y, z, a, b, c, d, e, center = center]'
      return
   endif
   nd = size(array, /n_dim)
+  sz = size(array)
+
+  if nd eq 0 then $
+     message, 'Input must be an array'
+
   if n_elements(center) ne 0 && n_elements(center) ne nd then $
      message, 'Number of elements in center must match dimension of array'
 
-  if n_elements(center) ne 0 then begin
-     sz = size(array)
+  do_center = n_elements(center) ne 0
+  if do_center then begin
      delta = center - (sz[1:nd] - 1) / 2.
-  endif else delta = intarr(nd)
+  endif 
 
   ind = lindgen(n_elements(array))
-  ind = array_indices(array, ind)
-  if nd eq 1 then ind = reform(ind, 1, n_elements(ind))
-  sz = size(ind)
 
-  if nd ge 1 then x = reshape(ind[0,*], array) + delta[0]
-  if nd ge 2 then y = reshape(ind[1,*], array) + delta[1]
-  if nd ge 3 then z = reshape(ind[2,*], array) + delta[2]
-  if nd ge 4 then a = reshape(ind[3,*], array) + delta[3]
-  if nd ge 5 then b = reshape(ind[4,*], array) + delta[4]
-  if nd ge 6 then c = reshape(ind[5,*], array) + delta[5]
-  if nd ge 7 then d = reshape(ind[6,*], array) + delta[6]
-  if nd ge 8 then e = reshape(ind[7,*], array) + delta[7]
-return
+  if nd ge 1 then begin
+     x = ind mod sz[1]
+     if do_center then x += delta[0]
+     x = reshape(x, array, /over)
+  endif
+  if nd ge 2 then begin
+     ind /= sz[1]
+     y =ind mod sz[2]
+     if do_center then y += delta[1]
+     y = reshape(y, array, /over)
+  endif
+  if nd ge 3 then begin
+     ind /= sz[2]
+     z = ind mod sz[3]
+     if do_center then z += delta[2]
+     z = reshape(z, array, /over)
+  endif
+  if nd ge 4 then begin
+     ind /= sz[3]
+     a = ind mod sz[4]
+     if do_center then a += delta[3]
+     a = reshape(a, array, /over)
+  endif
+  if nd ge 5 then begin
+     ind /= sz[4]
+     b = ind mod sz[5]
+     if do_center then b += delta[4]
+     b = reshape(b, array, /over)
+  endif
+  if nd ge 6 then begin
+     ind /= sz[5]
+     c = ind mod sz[6]
+     if do_center then c += delta[5]
+     c = reshape(c, array, /over)
+  endif
+  if nd ge 7 then begin
+     ind /= sz[6]
+     d = ind mod sz[7]
+     if do_center then d += delta[6]
+     d = reshape(d, array, /over)
+  endif
+  if nd ge 8 then begin
+     ind /= sz[7]
+     e = ind 
+     if do_center then e += delta[7]
+     e = reshape(e, array, /over)
+  endif
+
 end
 
 pro test
