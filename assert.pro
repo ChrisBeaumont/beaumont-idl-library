@@ -8,10 +8,11 @@
 ;  Utilities
 ;
 ; CALLING SEQUENCE:
-;  ASSERT, assertion
+;  ASSERT, assertion [, msg]
 ;
 ; INPUTS:
 ;  assertion: A boolean expression believed to be true
+;  msg: An optional string to print when the assertion fails
 ;
 ; PROCEDURE:
 ;  The procedure evaluates whether the assertion is true or false. If
@@ -20,8 +21,9 @@
 ;
 ; Modification History:
 ;  April 2009- Written by Chris Beaumont
+;  July 2011- Added msg input. cnb.
 ;-
-pro assert, assertion
+pro assert, assertion, msg
 compile_opt idl2
 on_error, 2
 
@@ -32,6 +34,9 @@ endif
 if assertion then return
 
 help,/trace, output = out
+if n_elements(msg) ne 0 then $
+   message, /con, msg
+
 message, 'Assertion failed at: '+out[1]
 
 end
