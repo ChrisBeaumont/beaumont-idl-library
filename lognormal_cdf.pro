@@ -24,7 +24,7 @@
 ; MODIFICATION HISTORY:
 ;  July 2011: Written by Chris Beaumont
 ;-
-pro lognormal_cdf, x, a, sigma, param = param
+function lognormal_cdf, x, a, sigma, param = param
 
   npar = n_params()
   if npar ne 1 && npar ne 3 then begin
@@ -43,5 +43,5 @@ pro lognormal_cdf, x, a, sigma, param = param
   endif else if n_elements(param) ne 0 then $
      message, 'Cannot supply both a,sigma and param'
 
-  return 0.5 * erfc(alog(a / x) / sqrt(2 * sigma^2))
+  return, 0.5 * erfc(alog(a / x) / sqrt(2 * sigma^2))
 end
