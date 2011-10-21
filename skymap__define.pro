@@ -52,11 +52,16 @@
 ;
 ; MODIFICATION HISTORY:
 ;  December 2010: Written by Chris Beaumont
+;  Aug 2011: Added support for euclidian (non-sky) maps. cnb.
 ;-
 function skymap::weight, id, x, y
   dval = (*self.dval)[id]
-  gcirc, 2, (*self.x)[id], (*self.y)[id], x, y, dis
-  dis /= 3600.
+  if self.euclidian then begin
+     dis = sqrt(((*self.x)[id] - x)^2 + ((*self.y)[id] - y)^2)
+  endif else begin
+     gcirc, 2, (*self.x)[id], (*self.y)[id], x, y, dis
+     dis /= 3600.
+  endelse
   result = 1 / dval^2 * exp(-dis^2 / (2 * self.sigma^2)) * $
            (dis lt self.truncate)
   return, result
@@ -171,7 +176,12 @@ pro skymap::makeMapClip, clip, lo = lo, hi = hi, $
   CONVERGE_TOL = keyword_set(tol) ? tol : .01
 
   head = (*self.map).head
-  adxy, head, *self.x, *self.y, x, y
+  if self.euclidian then begin
+     x = *self.x
+     y = *self.y
+  endif else begin
+     adxy, head, *self.x, *self.y, x, y
+  endelse
   val = *self.val
 
   for i = 0, MAXITER - 1, 1 do begin
@@ -261,13 +271,23 @@ pro skymap::makeMap
   ny = sxpar(head, 'naxis2')
   mx = rebin(findgen(nx), nx, ny, /sample)
   my = rebin(1#findgen(ny), nx, ny, /sample)
-  xyad, head, mx, my, ma, md
+  if self.euclidian then begin
+     ma = mx
+     md = my
+  endif else begin
+     xyad, head, mx, my, ma, md
+  endelse
 
   ;- data sky coords to pixels
   da = x
   dd = y
-  adxy, head, da, dd, dx, dy
-
+  if self.euclidian then begin
+     dx = da
+     dy = dd
+  endif else begin
+     adxy, head, da, dd, dx, dy
+  endelse
+  
   ;- a postage stamp
   ;- safely calculate minimum pixel size (may be variable)
   delt = (ma - shift(ma, 1,0)) > (md - shift(md, 0,1))
@@ -367,7 +387,7 @@ function skymap::init, map, x, y, $
         message, 'x, y, val, and dval not the same size'
   
   if ~keyword_set(fwhm) then $
-     fwhm = sxpar(map.head, 'naxis2') * abs(sxpar('cdelt2')) / 100.
+     fwhm = sxpar(map.head, 'naxis2') * abs(sxpar(map.head, 'cdelt2')) / 100.
   sigma = fwhm / (2 * sqrt(2 * alog(2)))
   if ~keyword_set(truncate) then truncate = fwhm * 2
 
@@ -385,7 +405,7 @@ function skymap::init, map, x, y, $
   self.sigma = sigma
   self.truncate = truncate
   self.verbose = keyword_set(verbose)
-
+  self.euclidian = sxpar(map.head, 'EUCLID') eq 1
 
   return, 1
 end
@@ -399,6 +419,7 @@ pro skymap__define
   data = {skymap, x:ptr_new(), $
           y:ptr_new(), val:ptr_new(), dval:ptr_new(), $
           included:ptr_new(), $
+          euclidian: 0, $
           map:ptr_new(), emap:ptr_new(), $
           truncate:0., sigma:0., verbose:0}
 end

@@ -30,6 +30,7 @@
 ;  December 13 2010: Changed implementation for speed. The lower and
 ;  upper bounds for each array are computed directly, instead of using
 ;  index arrays and WHERE. cnb.
+;  Aug 24 2011: Fixed a bug in handling y trimming. cnb
 ;-
 pro stamp, src, x1, y1, dest, x2, y2, dx, dy, $
            add = add, mult = mult, div = div, sub = sub
@@ -59,9 +60,9 @@ pro stamp, src, x1, y1, dest, x2, y2, dx, dy, $
   t_trim = ((y1 + dy - sz1[2]) > (y2 + dy - sz2[2])) > 0
 
   x1_0 = x1 + l_trim & x1_1 = x1 + dx - 1 - r_trim
-  y1_0 = y1 + l_trim & y1_1 = y1 + dy - 1 - t_trim
+  y1_0 = y1 + b_trim & y1_1 = y1 + dy - 1 - t_trim
   x2_0 = x2 + l_trim & x2_1 = x2 + dx - 1 - r_trim
-  y2_0 = y2 + l_trim & y2_1 = y2 + dy - 1 - t_trim
+  y2_0 = y2 + b_trim & y2_1 = y2 + dy - 1 - t_trim
 
   ;- requested stamp is completely off both images
   if (x1_1 lt x1_0) || (y1_1 lt y1_0) || $

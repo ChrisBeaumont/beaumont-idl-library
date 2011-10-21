@@ -36,13 +36,13 @@ end
 ;  zero-point, and can be removed via comparison to a control field.
 ;-
 pro nicest::mapeMap, nocorr = nocorr
-  self->nicer::makeMap
+  self->skymap::makeMap
   if keyword_set(nocorr) then return
   tmp = *self.val
   *self.val = *self.dval^2
   map = *self.map
   emap = *self.emap
-  self->nicer::makeMap
+  self->skymap::makeMap
   *self.map = map - *self.map * self.beta
   *self.emap = emap
   *self.val = tmp
