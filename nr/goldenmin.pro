@@ -38,7 +38,8 @@
 ;  Added _extra keyword. cnb. June 2009
 ;-
 function goldenmin, func, xa, xb, xc, $
-                    tol = tol, verbose = verbose, _extra = extra
+                    tol = tol, verbose = verbose, _extra = extra, $
+                    fmin= fmin
 compile_opt idl2
 ;-on_error, 2
 
@@ -99,6 +100,7 @@ while (abs(x3 - x0) gt tol * (abs(x1) + abs(x2))) do begin
 endwhile
 
 if keyword_set(verbose) then print, 'goldenmin converged in '+strtrim(niter)+' iterations.'
+fmin = min([f1, f2])
 if (f1 lt f2) then return, x1
 ;else
 return, x2
