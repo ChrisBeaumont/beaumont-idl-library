@@ -11,23 +11,23 @@
 ;  coordinate systems
 ;
 ; CALLING SEQUENCE:
-;  result=KDIST( latitude, velocity, [/RADIANS])
+;  result=KDIST( longitude, velocity, [/RADIANS])
 ;
 ; INPUTS:
-;  latitude: Galactic Latitude. Currently must be in the range [-180,
+;  longitude: Galactic Longitude. Currently must be in the range [-180,
 ;  180] in degrees.
 ;
 ;  velocity: Radial velocity in km/s
 ;
 ; KEYWORD PARAMETERS:
-;  RADIANS: If set, input Latitude is in radians
+;  RADIANS: If set, input Longitude is in radians
 ;  DEBUG: If set, produce debugging plots / information
 ;
 ; OUTPUTS:
 ;  The two element vector [near_distance, far_distance] in kpc.
 ;
 ; RESTRICTIONS:
-;  Currently only computes distances for objects in the inner galaxy.  
+;  Currently only computes distances for objects in the inner galaxy.
 ;
 ; MODIFICATION HISTORY:
 ;  Written by: Chris Beaumont, June 2008.
@@ -40,7 +40,7 @@
 ;  0902.3913
 ;  March 20, 2009: Changed minor typo in value of a1. Added /DEBUG keyword
 ;-
-FUNCTION kdist, latitude, velocity, radians=radians, debug = debug
+FUNCTION kdist, longitude, velocity, radians=radians, debug = debug
 compile_opt idl2
 on_error, 2
 
@@ -48,11 +48,11 @@ if n_params() ne 2 then begin
     message,'Calling Sequence: dist=kdist(l,v,[/radians])'
 endif
 
-if ~keyword_set(radians) then l=latitude/!radeg else l=latitude
+if ~keyword_set(radians) then l=longitude/!radeg else l=longitude
 l=(l mod (2*!dpi))
 if(l lt 0) then l += 2 * !dpi
 
-if (l ge !pi/2) && (l lt 3*!pi/2) then message, 'Error -- Latitude must be acute'
+if (l ge !pi/2) && (l lt 3*!pi/2) then message, 'Error -- Longitude must be acute'
 
 ;- notation:
 ; v : rotation velocity
@@ -71,7 +71,7 @@ a3=.0077D
 
 ;- the following are from arxiv 0902.3913 (VLBI parallax)
 ;- value taken from section 4, the best fit to this particular roation curve
-ro=8.8 
+ro=8.8
 vo=275.
 ;ro = 8.5 ; - Brand Blitz value
 ;vo = 225

@@ -55,7 +55,7 @@ if n_elements(tol) ne 1 then tol = 1d-3
 if size(func,/type) ne 7 then $
    message, 'supplied func must be a string'
 
-if (xb - xa) * (xc - xa) le 0 then $
+if sign(xb - xa) * sign(xc - xa) le 0 then $
    message, 'xb must lie between xa and xc'
 
 ;-use the golden ratio in picking midpoints

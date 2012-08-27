@@ -12,10 +12,12 @@
 ;
 ; where v_i is the ith sampled data point and w_i is a smoothing
 ; function. In this class, w_i is a gaussian centered on v_i, with a
-; fwhm specified by the user. 
+; fwhm specified by the user.
 ;
 ; The variance map is given by
-;  v(x,y) = sum(w_i^2 v_i) / sum(w_i)^2
+;  v(x,y) = sum(w_i^2 dv_i^2) / sum(w_i)^2
+;
+;  where dv_i^2 is the variance on measurement i
 ;
 ; METHODS:
 ;  weight: Implementation of the weighting kernel.
@@ -31,7 +33,7 @@
 ; SUPERCLASSES:
 ;  none
 ;
-; SUBCLASSES: 
+; SUBCLASSES:
 ;  nicest: Overloads the weight method to implement Marco
 ;          Lombardi's NICEST algorithm.
 ;
@@ -118,13 +120,13 @@ pro skymap::writeFits, name, varname = varname
   if keyword_set(varname) && (~is_scalar(varname) || $
                               size(varname, /tname) ne 'STRING') $
   then message, 'Varname must be a scalar string'
-                 
+
   writefits, name, (*self.map).map, (*self.map).head
   if keyword_set(varname) then $
      writefits, varname, (*self.emap).map, (*self.emap).head
 end
 
-  
+
 ;+
 ; PURPOSE:
 ;  This procedure iteratively computes the smooth map with sigma
@@ -135,11 +137,11 @@ end
 ;  point v_i is compared to the map value map(x_i, y_i). If the two
 ;  values disagree by more than CLIP * sigma_map(x_i, y_i), the point
 ;  is rejected. The map is recalculated with valid points until
-;  convergence. 
+;  convergence.
 ;
 ; INPUTS:
 ;  clip: The outlier threshhold (see above). 3 is typical
-; 
+;
 ; KEYWORD PARAMETERS:
 ;  lo: set to flag only the lo-valued outliers.
 ;  hi: set to flag only the hi-valued outliers.
@@ -187,8 +189,8 @@ pro skymap::makeMapClip, clip, lo = lo, hi = hi, $
   for i = 0, MAXITER - 1, 1 do begin
      if self.verbose then print, '      Sigma Clipping. Iteration '+strtrim(i+1,2)
 
-     self->makeMap     
-     
+     self->makeMap
+
      ;- flag outliers
      sigma = sqrt((*self.emap).map[x,y] + *self.dval^2)
      delta = (val - (*self.map).map[x, y]) / sigma
@@ -208,7 +210,7 @@ pro skymap::makeMapClip, clip, lo = lo, hi = hi, $
         message, 'Too many points rejected. Aborting', /con
         stop
         return
-     endif     
+     endif
 
      ;- converged on a set of rejects
      if (i+1) ge MINITER && $
@@ -219,12 +221,12 @@ pro skymap::makeMapClip, clip, lo = lo, hi = hi, $
 
      *self.included = good
   endfor
-  
+
   message, 'Sigma clipping did not converge.', /con
 end
-     
-     
-     
+
+
+
 
 ;+
 ; PURPOSE:
@@ -232,8 +234,8 @@ end
 ;
 ; PROCEDURE:
 ;  This function uses weighted mean smoothing with a Gaussian
-;  smoothing kernel. 
-;    
+;  smoothing kernel.
+;
 ;     V(x,y) = sum(w_i * val_i) / sum(w_i)
 ;  where
 ;     w_i = 1/dval_i^2 * exp[-((x-x_i)^2 + (y-y_i)^2) / 2 sigma^2]
@@ -287,7 +289,7 @@ pro skymap::makeMap
   endif else begin
      adxy, head, da, dd, dx, dy
   endelse
-  
+
   ;- a postage stamp
   ;- safely calculate minimum pixel size (may be variable)
   delt = (ma - shift(ma, 1,0)) > (md - shift(md, 0,1))
@@ -316,7 +318,7 @@ pro skymap::makeMap
      ty = floor(sy + dy[i])
      sa = ma[tx, ty] & sd = md[tx, ty]
      w = self->weight(i, sa, sd)
-     
+
      stamp, w * val[i], 0, 0, $
             result, tx[0], ty[0], stampsz, stampsz, /add
      stamp, w, 0, 0, $
@@ -334,7 +336,7 @@ pro skymap::makeMap
      result[bad] = !values.f_nan
      emap[bad] = !values.f_nan
   endif
-  
+
   (*self.map).map = result
   (*self.emap).map = emap
 end
@@ -366,7 +368,7 @@ function skymap::init, map, x, y, $
                        truncate = truncate, $
                        verbose = verbose
   compile_opt idl2
-  
+
   ;- check inputs
   if n_params() ne 5 then begin
      print, 'calling sequence'
@@ -385,14 +387,14 @@ function skymap::init, map, x, y, $
   if n_elements(y) ne nobj || n_elements(val) ne nobj || $
      n_elements(dval) ne nobj then $
         message, 'x, y, val, and dval not the same size'
-  
+
   if ~keyword_set(fwhm) then $
      fwhm = sxpar(map.head, 'naxis2') * abs(sxpar(map.head, 'cdelt2')) / 100.
   sigma = fwhm / (2 * sqrt(2 * alog(2)))
   if ~keyword_set(truncate) then truncate = fwhm * 2
 
   sxaddpar, map.head, 'SIGMA', sigma, 'Smoothing kernel, DEGREES'
-  
+
   self.x = ptr_new(x)
   self.included = ptr_new(byte(x) * 0B + 1B, /no_copy)
   self.y = ptr_new(y)
@@ -401,7 +403,7 @@ function skymap::init, map, x, y, $
 
   self.map = ptr_new(map)
   self.emap = ptr_new(map)
-  
+
   self.sigma = sigma
   self.truncate = truncate
   self.verbose = keyword_set(verbose)

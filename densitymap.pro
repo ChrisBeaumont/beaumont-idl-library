@@ -26,10 +26,10 @@
 ;
 ; OUTPUTS:
 ;  map, errmap, and head are updated with the correct information.
-;  
+;
 ; KEYWORD PARAMETERS:
 ;  cdelt: The pixel size of the smoothed map, in degrees /
-;         pixel. Either a scalar or two element array. The default 
+;         pixel. Either a scalar or two element array. The default
 ;         pixel size is roughly 1/2 the mean input point spacings.
 ;  crval: The output map center. The default is the middle of the
 ;         input data. A two element array.
@@ -42,23 +42,23 @@
 ;            coordinates.
 ;  verbose: If set, this procedure will print information as it
 ;           works. Set to a value 1-4 to control the amount of output
-;           produced. 
+;           produced.
 ;  robust: If set, the distances between objects will be computed
 ;          using rigorous spherical trigonometry. This will be MUCH slower, as
 ;          this appoach is not vectorized well. The default behavior is to
 ;          treat the coordinates as cartesian, which is adequate for small
 ;          fields.
-;   debug: Keyword which runs both robust and non-robust methods, and 
+;   debug: Keyword which runs both robust and non-robust methods, and
 ;          reports for how many pixels the non-robust method gets the
 ;          wrong result.
 ;   cartesian: By default, the procedure assumes that the input
 ;          coordinates are on the sky. Set the CARTESIAN keyword to treat the
 ;          coordinates as on a flat plane.
-;  
+;
 ; PROCEDURE:
 ;  The method is taken from section 3.5 of Gutermuth et al
-;  2005ApJ...632..397G. For each pixel, the procedure finds 
-;  the distance r to the (num)'th closest object. The surface 
+;  2005ApJ...632..397G. For each pixel, the procedure finds
+;  the distance r to the (num)'th closest object. The surface
 ;  density of that pixel is num / (pi r^2).
 ;
 ; EXAMPLE:
@@ -69,12 +69,12 @@
 ;  tvscl, congrid(map, 500, 500)
 ;
 ; MODIFICATION HISTORY:
-;  Written by: Chris Beaumont, December 2008  
+;  Written by: Chris Beaumont, December 2008
 ;  May 11 2009: Added CARTESIAN keyword. cnb.
 ;  June 15 2009: Updated things so that VERBIAGE handles text
-;                output. cnb. 
+;                output. cnb.
 ;  June 15 2009: Fixed some bugs related to the CARTESIAN
-;                keyword. cnb. 
+;                keyword. cnb.
 ;  June 15 2009: Enhancements to cdelt. Added crval and naxis
 ;                keywords. cnb.
 ;  Oct  8 2009:  Fixed a bug which led to integer overflow when
@@ -82,7 +82,7 @@
 ;-
 PRO densitymap, x, y, num, map, errmap, head, $
                 crval = crval, naxis = naxis, cdelt = cdelt, $
-                galactic = galactic, cartesian = cartesian, $ 
+                galactic = galactic, cartesian = cartesian, $
                 verbose = verbose, robust = robust, $
                 debug = debug, out = out
 
@@ -95,7 +95,7 @@ dbl_dtor = (!dpi) / 180D
 ;-check for proper input
 if n_params() ne 6 then begin
     print, 'DENSITYMAP calling sequence: '
-    print, 'densitymap, x, y, n, map, errmap, head, [cdelt = cdelt, crval = crval, naxis = naxis,' 
+    print, 'densitymap, x, y, n, map, errmap, head, [cdelt = cdelt, crval = crval, naxis = naxis,'
     print, '            /clip, /galactic, verbose = verbose, /debug, /robust, /cartesian, out = out]'
     return
 endif
@@ -111,8 +111,8 @@ endif else if keyword_set(GALACTIC) then begin
     ctype1 = 'GLON-CAR'
     ctype2 = 'GLAT-CAR'
 endif else begin
-    ctype1 = 'RA-CAR'
-    ctype2 = 'DEC-CAR'
+    ctype1 = 'RA---CAR'
+    ctype2 = 'DEC--CAR'
 endelse
 
 ;- output map center
@@ -134,7 +134,7 @@ sphere_fudge =  keyword_set(cartesian) ? 1 : cos(crval2 * dbl_dtor)
 if ~keyword_set(cdelt) then begin
    ;-default: ~10 pixels per input point
    area = (yra[1] - yra[0]) * (xra[1] - xra[0]) * sphere_fudge
-   aper = sqrt(area * num / (sz * !pi)) 
+   aper = sqrt(area * num / (sz * !pi))
    cdelt1 = -aper / 2
    cdelt2 = aper / 2
    cdelt = cdelt2
@@ -182,15 +182,18 @@ sxaddpar, head, 'BUNIT','Sources / square degree'
 ;-calculate nearest neighbors
 imx = reform( rebin(     indgen(naxis1), naxis1, naxis2), naxis1 * naxis2, /over)
 imy = reform( rebin( 1 # indgen(naxis2), naxis1, naxis2), naxis1 * naxis2, /over)
-imx = (imx + 1 - crpix1) * cdelt1 + crval1 
-imy = (imy + 1 - crpix2) * cdelt2 + crval2
+xyad, head, imx, imy, a, d
+imx = a
+imy = d
+;imx = (imx + 1 - crpix1) * cdelt1 + crval1
+;imy = (imy + 1 - crpix2) * cdelt2 + crval2
 
 ;- non-robust (but fast) calculation
 if not (keyword_set(robust) && ~keyword_set(debug)) then begin
    verbiage, 'Calculating density map on '+systime(), 2, verbose
    neighbors = nearestN(transpose([[imx],[imy]]), transpose([[x],[y]]), $
                          num, verbose = verbose)
-    
+
     ;- calculate distances
     if keyword_set(cartesian) then begin
        dis = sqrt((imx - x[neighbors])^2 + (imy - y[neighbors])^2)
@@ -205,7 +208,7 @@ if keyword_set(debug) || keyword_set(robust) then begin
    verbiage, 'Calculating map robustly on '+systime(), 2, verbose
    backup = lonarr(naxis1 * naxis2)
 
-   ;- find nearest neighbors 
+   ;- find nearest neighbors
    for i = 0L, naxis1 * naxis2 - 1, 1 do begin
        if keyword_set(cartesian) then begin
           dis2 = (imx[i] - x)^2 + (imy[i] - y)^2
@@ -225,7 +228,7 @@ if keyword_set(debug) || keyword_set(robust) then begin
 endif
 
 verbiage, 'Map calculation finished on '+systime(), 2, verbose
-    
+
 ;- make map
 if ~keyword_set(cartesian) then dis /= 3600D
 map  = reform(1.0D * num / (!dpi * dis ^ 2), naxis1, naxis2)
