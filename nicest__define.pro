@@ -1,7 +1,7 @@
 ;+
 ; PURPOSE:
 ;  This class implements the NICEST algorithm to make smoothed
-;  extinction maps based on on stellar reddening data. The relevatn
+;  extinction maps based on on stellar reddening data. The relevant
 ;  equations are
 ;  
 ;  (1)A = sum(w_n A_n) / sum(w_n) - beta sum(w_n sigma_n^2) / sum(w_n)
@@ -35,7 +35,7 @@ end
 ;  correction term is (to first order) constant, it only affects the
 ;  zero-point, and can be removed via comparison to a control field.
 ;-
-pro nicest::mapeMap, nocorr = nocorr
+pro nicest::makeMap, nocorr = nocorr
   self->skymap::makeMap
   if keyword_set(nocorr) then return
   tmp = *self.val
