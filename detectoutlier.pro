@@ -135,7 +135,7 @@ if keyword_set(verbose) then begin
    print, nrej, ntot, $
         format = '("Success. Rejected ", i'+ndigit+', " of ", i'+ndigit+'," outliers")'
 endif
-status = 0
+if total(use) eq nx then status = 1 else status = 0 
 if keyword_set(plot) then detectoutlier_plot, x, y, use
 return, use
 
